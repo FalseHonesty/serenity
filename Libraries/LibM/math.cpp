@@ -386,6 +386,13 @@ long double log2l(long double x)
     return log2(x);
 }
 
+int ilog(int n)
+{
+    if (n <= 0)
+        return 0;
+    return floor(log2(n)) + 1;
+}
+
 double frexp(double, int*)
 {
     ASSERT_NOT_REACHED();
