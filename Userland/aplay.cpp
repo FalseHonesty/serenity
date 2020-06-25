@@ -24,9 +24,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <LibAudio/Buffer.h>
 #include <LibAudio/ClientConnection.h>
-#include <LibAudio/WavLoader.h>
+#include <LibAudio/Loader.h>
 #include <LibCore/EventLoop.h>
 #include <stdio.h>
 
@@ -34,29 +33,34 @@ int main(int argc, char** argv)
 {
     Core::EventLoop loop;
     if (argc < 2) {
-        fprintf(stderr, "Need a WAV to play\n");
+        fprintf(stderr, "Need an audio file to play\n");
         return 1;
     }
 
     auto audio_client = Audio::ClientConnection::construct();
     audio_client->handshake();
-    Audio::WavLoader loader(argv[1]);
-    if (loader.has_error()) {
-        fprintf(stderr, "Failed to load WAV file: %s\n", loader.error_string());
+
+    auto loader = Audio::Loader::load_from_file(argv[1]);
+    if (!loader) {
+        fprintf(stderr, "File is not a supported audio format\n");
+        return 1;
+    }
+    if (loader->has_error()) {
+        fprintf(stderr, "Failed to load %s file: %s\n", loader->type_name().characters(), loader->error().characters());
         return 1;
     }
 
     printf("\033[34;1m Playing\033[0m: %s\n", argv[1]);
     printf("\033[34;1m  Format\033[0m: %u Hz, %u-bit, %s\n",
-        loader.sample_rate(),
-        loader.bits_per_sample(),
-        loader.num_channels() == 1 ? "Mono" : "Stereo");
+        loader->sample_rate(),
+        loader->bits_per_sample(),
+        loader->number_of_samples() == 1 ? "Mono" : "Stereo");
     printf("\033[34;1mProgress\033[0m: \033[s");
     for (;;) {
-        auto samples = loader.get_more_samples();
+        auto samples = loader->get_more_samples();
         if (samples) {
             printf("\033[u");
-            printf("%d/%d", loader.loaded_samples(), loader.total_samples());
+            printf("%d/%d", loader->number_of_loaded_samples(), loader->number_of_samples());
             fflush(stdout);
             audio_client->enqueue(*samples);
         } else if (audio_client->get_remaining_samples()) {

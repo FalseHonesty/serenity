@@ -26,8 +26,9 @@
  */
 
 #include "Track.h"
+#include <AK/OwnPtr.h>
 #include <AK/NumericLimits.h>
-#include <LibAudio/WavLoader.h>
+#include <LibAudio/Loader.h>
 #include <math.h>
 
 Track::Track(const u32& time)
@@ -138,10 +139,10 @@ void Track::reset()
 
 String Track::set_recorded_sample(const StringView& path)
 {
-    Audio::WavLoader wav_loader(path);
-    if (wav_loader.has_error())
-        return String(wav_loader.error_string());
-    auto wav_buffer = wav_loader.get_more_samples(60 * sample_rate * sizeof(Sample)); // 1 minute maximum
+    auto loader = Audio::Loader::load_from_file(path);
+    if (loader->has_error())
+        return loader->error();
+    auto wav_buffer = loader->get_more_samples(60 * sample_rate * sizeof(Sample)); // 1 minute maximum
 
     if (!m_recorded_sample.is_empty())
         m_recorded_sample.clear();

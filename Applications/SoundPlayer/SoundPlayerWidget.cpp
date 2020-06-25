@@ -119,25 +119,26 @@ void SoundPlayerWidget::hide_scope(bool hide)
 
 void SoundPlayerWidget::open_file(String path)
 {
-    if (!path.ends_with(".wav")) {
-        GUI::MessageBox::show("Selected file is not a \".wav\" file!", "Filetype error", GUI::MessageBox::Type::Error);
-        return;
+    auto loader = Audio::Loader::load_from_file(path);
+    if (!loader) {
+        GUI::MessageBox::show(
+            String::format("File is not a supported audio format"),
+            "Filetype error", GUI::MessageBox::Type::Error);
     }
-
-    OwnPtr<Audio::WavLoader> loader = make<Audio::WavLoader>(path);
     if (loader->has_error()) {
         GUI::MessageBox::show(
             String::format(
-                "Failed to load WAV file: %s (%s)",
+                "Failed to load %s file: %s (%s)",
+                loader->type_name().characters(),
                 path.characters(),
-                loader->error_string()),
+                loader->error().characters()),
             "Filetype error", GUI::MessageBox::Type::Error);
         return;
     }
 
     m_sample_ratio = PLAYBACK_MANAGER_RATE / static_cast<float>(loader->sample_rate());
 
-    m_slider->set_max(normalize_rate(static_cast<int>(loader->total_samples())));
+    m_slider->set_max(normalize_rate(static_cast<int>(loader->number_of_samples())));
     m_slider->set_enabled(true);
     m_play->set_enabled(true);
     m_stop->set_enabled(true);
@@ -146,8 +147,8 @@ void SoundPlayerWidget::open_file(String path)
     m_status->set_text(String::format(
         "Sample rate %uHz, %u %s, %u bits per sample",
         loader->sample_rate(),
-        loader->num_channels(),
-        (loader->num_channels() == 1) ? "channel" : "channels",
+        loader->number_of_channels(),
+        (loader->number_of_channels() == 1) ? "channel" : "channels",
         loader->bits_per_sample()));
 
     m_manager.set_loader(move(loader));

@@ -1,4 +1,5 @@
 set(SOURCES
+    Loader.cpp
     ClientConnection.cpp
     WavLoader.cpp
     WavWriter.cpp

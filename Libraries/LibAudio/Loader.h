@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020, Andreas Kling <kling@serenityos.org>
+ * Copyright (c) 2020, Matthew Olsson <matthewcolsson@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,46 +26,54 @@
 
 #pragma once
 
-#include <AK/OwnPtr.h>
-#include <AK/RefPtr.h>
 #include <AK/String.h>
-#include <AK/StringView.h>
-#include <LibAudio/Loader.h>
 #include <LibAudio/Buffer.h>
+#include <LibCore/File.h>
+
+#define ENUMERATE_AUDIO_TYPES(A) \
+    A(Wav, wav)
 
 namespace Audio {
 
-// Parses a WAV file and produces an Audio::Buffer.
-class WavLoader final : public Loader {
+enum AudioType {
+#define ENUMERATE_AUDIO_TYPE(type, extension) type,
+    ENUMERATE_AUDIO_TYPES(ENUMERATE_AUDIO_TYPE)
+#undef ENUMERATE_AUDIO_TYPE
+};
+
+#define ENUMERATE_AUDIO_TYPE(type, extension) class type##Loader;
+    ENUMERATE_AUDIO_TYPES(ENUMERATE_AUDIO_TYPE)
+#undef ENUMERATE_AUDIO_TYPE
+
+class Loader {
 public:
-    ~WavLoader() override = default;
-    explicit WavLoader(const StringView& path);
+    static OwnPtr<Loader> load_from_file(const StringView& path);
 
-    AudioType type() const override { return AudioType::Wav; }
-    String type_name() const override { return "wav"; };
+    Loader(const StringView& path);
+    virtual ~Loader() = default;
 
-    bool sniff() override;
-    void seek(int position) override;
+    virtual AudioType type() const = 0;
+    virtual String type_name() const = 0;
 
-    int number_of_samples() const override { return m_total_samples; }
-    int number_of_loaded_samples() const override { return m_loaded_samples; }
-    u32 sample_rate() const override { return m_sample_rate; }
-    u16 number_of_channels() const override { return m_num_channels; }
-    u16 bits_per_sample() const override { return m_bits_per_sample; }
+    bool has_error() const { return !m_error.is_null(); }
+    String error() const {  return m_error; };
+    virtual bool sniff() = 0;
 
-    RefPtr<Buffer> get_more_samples(size_t max_bytes_to_read_from_input = 128 * KB) override;
+    void reset() { seek(0); };
+    virtual void seek(int position) = 0;
 
-private:
-    bool parse_header();
+    virtual int number_of_samples() const = 0;
+    virtual int number_of_loaded_samples() const = 0;
+    virtual u32 sample_rate() const = 0;
+    virtual u16 number_of_channels() const = 0;
+    virtual u16 bits_per_sample() const = 0;
 
-    OwnPtr<ResampleHelper> m_resampler;
+    virtual RefPtr<Buffer> get_more_samples(size_t max_bytes_to_read_from_input = 128 * KB) = 0;
+    RefPtr<Core::File> file() const { return m_file; };
 
-    u32 m_sample_rate { 0 };
-    u16 m_num_channels { 0 };
-    u16 m_bits_per_sample { 0 };
-
-    int m_loaded_samples { 0 };
-    int m_total_samples { 0 };
+protected:
+    RefPtr<Core::File> m_file;
+    String m_error;
 };
 
 }

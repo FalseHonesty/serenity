@@ -34,13 +34,8 @@
 namespace Audio {
 
 WavLoader::WavLoader(const StringView& path)
-    : m_file(Core::File::construct(path))
+    : Loader(path)
 {
-    if (!m_file->open(Core::IODevice::ReadOnly)) {
-        m_error_string = String::format("Can't open file: %s", m_file->error_string());
-        return;
-    }
-
     if (!parse_header())
         return;
 
@@ -73,33 +68,27 @@ void WavLoader::seek(const int position)
     m_file->seek(position * m_num_channels * (m_bits_per_sample / 8));
 }
 
-void WavLoader::reset()
-{
-    seek(0);
-}
-
 bool WavLoader::parse_header()
 {
     Core::IODeviceStreamReader stream(*m_file);
 
-#define CHECK_OK(msg)                                                           \
-    do {                                                                        \
-        if (stream.handle_read_failure()) {                                     \
-            m_error_string = String::format("Premature stream EOF at %s", msg); \
-            return {};                                                          \
-        }                                                                       \
-        if (!ok) {                                                              \
-            m_error_string = String::format("Parsing failed: %s", msg);         \
-            return {};                                                          \
-        } else {                                                                \
-            dbgprintf("%s is OK!\n", msg);                                      \
-        }                                                                       \
-    } while (0);
+#define CHECK_OK(msg)                                                    \
+    do {                                                                 \
+        if (stream.handle_read_failure()) {                              \
+            m_error = String::format("Premature stream EOF at %s", msg); \
+            return {};                                                   \
+        }                                                                \
+        if (!ok) {                                                       \
+            m_error = String::format("Parsing failed: %s", msg);         \
+            return {};                                                   \
+        } else {                                                         \
+            dbgprintf("%s is OK!\n", msg);                               \
+        }                                                                \
+    } while (0)
 
-    bool ok = true;
     u32 riff;
     stream >> riff;
-    ok = ok && riff == 0x46464952; // "RIFF"
+    bool ok = riff == 0x46464952; // "RIFF"
     CHECK_OK("RIFF header");
 
     u32 sz;
@@ -192,6 +181,11 @@ bool WavLoader::parse_header()
     ASSERT(!stream.handle_read_failure());
 
     return true;
+}
+
+bool WavLoader::sniff() {
+    // m_resampler will not be set if the parse_header() call in the ctor failed
+    return m_resampler;
 }
 
 ResampleHelper::ResampleHelper(double source, double target)
