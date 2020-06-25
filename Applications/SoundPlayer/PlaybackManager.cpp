@@ -41,12 +41,12 @@ PlaybackManager::~PlaybackManager()
 {
 }
 
-void PlaybackManager::set_loader(OwnPtr<Audio::WavLoader>&& loader)
+void PlaybackManager::set_loader(OwnPtr<Audio::Loader>&& loader)
 {
     stop();
     m_loader = move(loader);
     if (m_loader) {
-        m_total_length = m_loader->total_samples() / static_cast<float>(m_loader->sample_rate());
+        m_total_length = m_loader->number_of_samples() / static_cast<float>(m_loader->sample_rate());
         m_timer->start();
         load_next_buffer();
     } else {
@@ -121,7 +121,7 @@ void PlaybackManager::remove_dead_buffers()
 void PlaybackManager::load_next_buffer()
 {
     if (m_buffers.size() < 10) {
-        for (int i = 0; i < 20 && m_loader->loaded_samples() < m_loader->total_samples(); i++) {
+        for (int i = 0; i < 20 && m_loader->number_of_loaded_samples() < m_loader->number_of_samples(); i++) {
             auto buffer = m_loader->get_more_samples(PLAYBACK_MANAGER_BUFFER_SIZE);
             if (buffer)
                 m_buffers.append(buffer);
