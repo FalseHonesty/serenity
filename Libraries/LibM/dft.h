@@ -28,4 +28,4 @@
 
 #include <LibAudio/Complex.h>
 
-Vector<Complex> dft_slow(Vector<Complex> input);
+Vector<Complex> dft_slow(Vector<Complex>& input);
