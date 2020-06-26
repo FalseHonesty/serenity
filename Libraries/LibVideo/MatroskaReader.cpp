@@ -30,6 +30,8 @@
 #include <AK/Optional.h>
 #include <AK/Utf8View.h>
 
+namespace Video {
+
 #define CHECK_HAS_VALUE(x) \
     if (!x.has_value())    \
     return false
@@ -451,4 +453,6 @@ bool MatroskaReader::read_unknown_element()
 
     m_streamer.drop_octets(element_length.value());
     return true;
+}
+
 }

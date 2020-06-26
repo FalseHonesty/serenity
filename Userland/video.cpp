@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Matthew Olsson <matthewcolsson@gmail.com>
+ * Copyright (c) 2018-2020, Hunter Salyer <thefalsehonesty@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,8 +24,29 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#pragma once
+#include <LibAudio/ClientConnection.h>
+#include <LibAudio/OpusLoader.h>
+#include <LibCore/EventLoop.h>
+#include <LibVideo/MatroskaReader.h>
 
-#include "Complex.h"
+int main(int, char**)
+{
+    Core::EventLoop event_loop;
+    auto document = Video::MatroskaReader::parse_matroska_from_file("/home/anon/test-webm.webm");
 
-Vector<Complex> dft_slow(Vector<Complex>& input);
+    Audio::OpusLoader opus_loader;
+    auto audio_client = Audio::ClientConnection::construct();
+    audio_client->handshake();
+
+    for (const auto& cluster : document->clusters()) {
+        for (const auto& block : cluster.blocks()) {
+            for (size_t i = 0; i < block.frame_count(); i++) {
+                const auto& frame = block.frame(i);
+                auto audio_buffer = opus_loader.parse_frame(frame);
+                if (audio_buffer)
+                    audio_client->enqueue(*audio_buffer);
+            }
+        }
+    }
+    event_loop.exec();
+}

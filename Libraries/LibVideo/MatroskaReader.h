@@ -32,6 +32,8 @@
 #include <AK/OwnPtr.h>
 #include <LibM/math.h>
 
+namespace Video {
+
 #define MATROSKA_DEBUG
 // #define MATROSKA_TRACE
 
@@ -95,7 +97,8 @@ private:
 
         void push_octets_read() { m_octets_read.append(0); }
 
-        void pop_octets_read() {
+        void pop_octets_read()
+        {
             auto popped = m_octets_read.take_last();
             if (!m_octets_read.is_empty())
                 m_octets_read.last() += popped;
@@ -202,3 +205,5 @@ private:
 
     Streamer m_streamer;
 };
+
+}

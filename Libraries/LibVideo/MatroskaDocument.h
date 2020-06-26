@@ -32,6 +32,8 @@
 #include <AK/String.h>
 #include <AK/Utf8View.h>
 
+namespace Video {
+
 struct EBMLHeader {
     String doc_type;
     u32 doc_type_version;
@@ -145,6 +147,7 @@ public:
     void set_timestamp(u64 timestamp) { m_timestamp = timestamp; }
     NonnullOwnPtrVector<Block>& blocks() { return m_blocks; }
     const NonnullOwnPtrVector<Block>& blocks() const { return m_blocks; }
+
 private:
     u64 m_timestamp { 0 };
     NonnullOwnPtrVector<Block> m_blocks;
@@ -171,3 +174,5 @@ private:
     NonnullOwnPtrVector<TrackEntry> m_tracks;
     NonnullOwnPtrVector<Cluster> m_clusters;
 };
+
+}

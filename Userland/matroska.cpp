@@ -29,7 +29,7 @@
 
 int main(int, char**)
 {
-    auto document = MatroskaReader::parse_matroska_from_file("/home/anon/test1.mkv");
+    auto document = Video::MatroskaReader::parse_matroska_from_file("/home/anon/test1.mkv");
     if (document) {
         printf("DocType is %s\n", document->header().doc_type.characters());
         printf("DocTypeVersion is %d\n", document->header().doc_type_version);
@@ -46,9 +46,9 @@ int main(int, char**)
             printf("\tTrack has Language \"%s\"\n", track.language().characters());
             printf("\tTrack has CodecID \"%s\"\n", track.codec_id().characters());
 
-            if (track.track_type() == TrackEntry::TrackType::Video) {
+            if (track.track_type() == Video::TrackEntry::TrackType::Video) {
                 printf("\t\tVideo is %llu pixels wide by %llu pixels tall\n", track.video_track().pixel_width, track.video_track().pixel_height);
-            } else if (track.track_type() == TrackEntry::TrackType::Audio) {
+            } else if (track.track_type() == Video::TrackEntry::TrackType::Audio) {
                 printf("\t\tAudio has %llu channels with a bit depth of %llu\n", track.audio_track().channels, track.audio_track().bit_depth);
             }
         }

@@ -24,10 +24,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "dft.h"
+#include "math.h"
 #include <AK/Vector.h>
-#include <LibAudio/Complex.h>
-#include <LibM/dft.h>
-#include <LibM/math.h>
 
 Vector<Complex> dft_slow(Vector<Complex>& inputs)
 {
