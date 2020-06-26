@@ -102,20 +102,13 @@ const float frame_size_in_ms_lookup_table[32] = {
     2.5, 5, 10, 20,
 };
 
-OpusLoader::OpusLoader(const StringView& path)
-    : Loader(path)
-    , m_buffer(m_file->read_all())
+OpusLoader::OpusLoader()
 {
 }
 
-Optional<TableOfContents> OpusLoader::parse_table_of_contents()
+TableOfContents OpusLoader::parse_table_of_contents(const ByteBuffer& buffer)
 {
-    if (!has_byte()) {
-        // Packet violates [R1]
-        return {};
-    }
-
-    u8 toc_byte = read_byte();
+    u8 toc_byte = buffer[0];
     u8 config = toc_byte >> 3;
     bool stereo_bit = toc_byte & 0x4;
     u8 frame_count_code = toc_byte & 0x3;
@@ -131,82 +124,14 @@ Optional<TableOfContents> OpusLoader::parse_table_of_contents()
     };
 }
 
-void OpusLoader::parse_single_frame(TableOfContents& contents)
+RefPtr<Buffer> OpusLoader::parse_frame(const ByteBuffer& buffer)
 {
-
-}
-
-void OpusLoader::parse_frames(TableOfContents& contents)
-{
-    if (contents.frame_count_code == FrameCountCode::OneFrame) {
-        return parse_single_frame(contents);
+    if (!buffer.size()) {
+        // Packet violates [R1]
+        return {};
     }
 
-    while (has_byte()) {
-        u16 first_byte = read_byte();
-        if (first_byte >= PACKET_SECOND_BYTE_INDICATOR_MIN_VALUE) {
-            ASSERT(has_byte());
-            first_byte += read_byte() * 4;
-        }
-
-
-    }
-}
-
-void OpusLoader::load_packet()
-{
-
-
-}
-
-void load_opus(const u8* data, size_t size)
-{
-
-}
-
-bool OpusLoader::sniff()
-{
-    return false;
-}
-
-void OpusLoader::seek(int position)
-{
-}
-
-int OpusLoader::number_of_samples() const
-{
-    return 0;
-}
-
-int OpusLoader::number_of_loaded_samples() const
-{
-    return 0;
-}
-
-u32 OpusLoader::sample_rate() const
-{
-    return 0;
-}
-
-u16 OpusLoader::number_of_channels() const
-{
-    return 0;
-}
-
-u16 OpusLoader::bits_per_sample() const
-{
-    return 0;
-}
-
-RefPtr<Buffer> OpusLoader::get_more_samples(size_t max_bytes_to_read_from_input)
-{
-    return RefPtr<Buffer>();
-}
-
-u8 OpusLoader::read_byte() const
-{
-    ASSERT(has_byte());
-    return m_buffer[m_cursor++];
+    auto toc = parse_table_of_contents(buffer);
 }
 
 }

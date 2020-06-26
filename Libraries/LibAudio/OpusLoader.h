@@ -37,13 +37,10 @@ public:
     OpusLoader();
     ~OpusLoader() = default;
 
-     Buffer parse_frame(const ByteBuffer&);
+     RefPtr<Buffer> parse_frame(const ByteBuffer&);
 
 private:
-    Optional<TableOfContents> parse_table_of_contents();
-    void parse_frames(TableOfContents& contents);
-    void parse_single_frame(TableOfContents& contents);
-    void load_packet();
+    TableOfContents parse_table_of_contents(const ByteBuffer&);
 };
 
 }
