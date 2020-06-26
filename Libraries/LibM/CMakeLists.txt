@@ -1,5 +1,6 @@
 set(SOURCES
     Complex.cpp
+    dft.cpp
     math.cpp
 )
 
