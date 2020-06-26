@@ -31,11 +31,12 @@
 #include <LibCore/File.h>
 
 #define ENUMERATE_AUDIO_TYPES(A) \
-    A(Wav, wav)
+    A(Wav, wav)                  \
+    A(Opus, opus)                \
 
 namespace Audio {
 
-enum AudioType {
+enum class AudioType {
 #define ENUMERATE_AUDIO_TYPE(type, extension) type,
     ENUMERATE_AUDIO_TYPES(ENUMERATE_AUDIO_TYPE)
 #undef ENUMERATE_AUDIO_TYPE

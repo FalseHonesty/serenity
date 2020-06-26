@@ -1,6 +1,7 @@
 set(SOURCES
     Loader.cpp
     ClientConnection.cpp
+    OpusLoader.cpp
     WavLoader.cpp
     WavWriter.cpp
 )

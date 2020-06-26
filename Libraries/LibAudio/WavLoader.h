@@ -38,8 +38,8 @@ namespace Audio {
 // Parses a WAV file and produces an Audio::Buffer.
 class WavLoader final : public Loader {
 public:
-    ~WavLoader() override = default;
     explicit WavLoader(const StringView& path);
+    ~WavLoader() override = default;
 
     AudioType type() const override { return AudioType::Wav; }
     String type_name() const override { return "wav"; };

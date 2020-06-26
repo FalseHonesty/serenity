@@ -24,32 +24,26 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <AK/OwnPtr.h>
-#include <LibAudio/Loader.h>
-#include <LibAudio/OpusLoader.h>
-#include <LibAudio/WavLoader.h>
+#pragma once
+
+#include <LibAudio/Buffer.h>
 
 namespace Audio {
 
-OwnPtr<Loader> Loader::load_from_file(const StringView& path) {
-#define ENUMERATE_AUDIO_TYPE(type, extension)            \
-    auto extension##_loader = make<type##Loader>(path);  \
-    if (extension##_loader->sniff())                     \
-        return extension##_loader;
-    ENUMERATE_AUDIO_TYPES(ENUMERATE_AUDIO_TYPE)
-#undef ENUMERATE_AUDIO_TYPE
+struct TableOfContents;
 
-    return {};
-}
+class OpusLoader final {
+public:
+    OpusLoader();
+    ~OpusLoader() = default;
 
-Loader::Loader(const StringView& path)
-    : m_file(Core::File::construct(path))
-{
-    if (!m_file->open(Core::IODevice::ReadOnly)) {
-        m_error = String::format("Can't open file: %s", m_file->error_string());
-        return;
-    }
-}
+     Buffer parse_frame(const ByteBuffer&);
+
+private:
+    Optional<TableOfContents> parse_table_of_contents();
+    void parse_frames(TableOfContents& contents);
+    void parse_single_frame(TableOfContents& contents);
+    void load_packet();
+};
 
 }
-
