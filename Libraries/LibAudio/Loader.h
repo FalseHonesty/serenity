@@ -31,8 +31,7 @@
 #include <LibCore/File.h>
 
 #define ENUMERATE_AUDIO_TYPES(A) \
-    A(Wav, wav)                  \
-    A(Opus, opus)                \
+    A(Wav, wav)
 
 namespace Audio {
 

@@ -41,6 +41,7 @@ public:
 
 private:
     TableOfContents parse_table_of_contents(const ByteBuffer&);
+    RefPtr<Buffer> parse_single_frame(const TableOfContents&, const ByteBuffer&);
 };
 
 }

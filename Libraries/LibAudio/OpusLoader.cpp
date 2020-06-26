@@ -132,6 +132,16 @@ RefPtr<Buffer> OpusLoader::parse_frame(const ByteBuffer& buffer)
     }
 
     auto toc = parse_table_of_contents(buffer);
+
+    if (toc.frame_count_code == FrameCountCode::OneFrame)
+        return parse_single_frame(toc, buffer);
+
+    ASSERT_NOT_REACHED();
+}
+
+RefPtr<Buffer> OpusLoader::parse_single_frame(const TableOfContents&, const ByteBuffer&)
+{
+    return {};
 }
 
 }
