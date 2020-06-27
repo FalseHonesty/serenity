@@ -192,7 +192,7 @@ private:
     bool parse_segment_elements(MatroskaDocument&);
     OwnPtr<SegmentInformation> parse_information();
 
-    NonnullOwnPtrVector<TrackEntry> parse_tracks();
+    bool parse_tracks(MatroskaDocument&);
     OwnPtr<TrackEntry> parse_track_entry();
     Optional<TrackEntry::VideoTrack> parse_video_track_information();
     Optional<TrackEntry::AudioTrack> parse_audio_track_information();

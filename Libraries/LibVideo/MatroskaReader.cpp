@@ -141,10 +141,7 @@ bool MatroskaReader::parse_segment_elements(MatroskaDocument& matroska_document)
                 return false;
             matroska_document.set_segment_information(move(segment_information));
         } else if (element_id == 0x1654AE6B) {
-            auto tracks = parse_tracks();
-            if (tracks.size() == 0)
-                return false;
-            matroska_document.set_tracks(move(tracks));
+            return parse_tracks(matroska_document);
         } else if (element_id == 0x1F43B675) {
             auto cluster = parse_cluster();
             if (!cluster)
@@ -192,17 +189,15 @@ OwnPtr<SegmentInformation> MatroskaReader::parse_information()
     return segment_information;
 }
 
-NonnullOwnPtrVector<TrackEntry> MatroskaReader::parse_tracks()
+bool MatroskaReader::parse_tracks(MatroskaDocument& matroska_document)
 {
-    NonnullOwnPtrVector<TrackEntry> tracks;
     auto success = parse_master_element("Tracks", [&](u64 element_id) {
         if (element_id == 0xAE) {
             auto track_entry = parse_track_entry();
-            if (!track_entry) {
-                IF_MATROSKA_DEBUG(dbg() << "Bad track entry");
+            if (!track_entry)
                 return false;
-            }
-            tracks.append(track_entry.release_nonnull());
+            auto track_number = track_entry->track_number();
+            matroska_document.add_track(track_number, track_entry.release_nonnull());
         } else {
             return read_unknown_element();
         }
@@ -210,9 +205,7 @@ NonnullOwnPtrVector<TrackEntry> MatroskaReader::parse_tracks()
         return true;
     });
 
-    if (!success)
-        return {};
-    return tracks;
+    return success;
 }
 
 OwnPtr<TrackEntry> MatroskaReader::parse_track_entry()

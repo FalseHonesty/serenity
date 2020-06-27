@@ -27,6 +27,8 @@
 #pragma once
 
 #include <AK/ByteBuffer.h>
+#include <AK/FlyString.h>
+#include <AK/HashMap.h>
 #include <AK/NonnullOwnPtrVector.h>
 #include <AK/OwnPtr.h>
 #include <AK/String.h>
@@ -84,9 +86,9 @@ public:
     void set_track_uid(u64 track_uid) { m_track_uid = track_uid; }
     TrackType track_type() const { return m_track_type; }
     void set_track_type(TrackType track_type) { m_track_type = track_type; }
-    String language() const { return m_language; }
+    FlyString language() const { return m_language; }
     void set_language(String language) { m_language = move(language); }
-    String codec_id() const { return m_codec_id; }
+    FlyString codec_id() const { return m_codec_id; }
     void set_codec_id(String codec_id) { m_codec_id = move(codec_id); }
     VideoTrack video_track() const { return m_video_track; }
     void set_video_track(VideoTrack video_track) { m_video_track = video_track; }
@@ -97,8 +99,8 @@ private:
     u64 m_track_number { 0 };
     u64 m_track_uid { 0 };
     TrackType m_track_type { Invalid };
-    String m_language = "eng";
-    String m_codec_id;
+    FlyString m_language = "eng";
+    FlyString m_codec_id;
 
     union {
         VideoTrack m_video_track;
@@ -164,14 +166,21 @@ public:
 
     Optional<SegmentInformation> segment_information() const { return static_cast<const SegmentInformation&>(*m_segment_information); }
     void set_segment_information(OwnPtr<SegmentInformation> segment_information) { m_segment_information = move(segment_information); }
-    const NonnullOwnPtrVector<TrackEntry>& tracks() const { return m_tracks; }
-    void set_tracks(NonnullOwnPtrVector<TrackEntry> tracks) { m_tracks = NonnullOwnPtrVector<TrackEntry>(move(tracks)); }
+    const HashMap<u64, NonnullOwnPtr<TrackEntry>>& tracks() const { return m_tracks; }
+    Optional<TrackEntry> track(u64 track_number) const
+    {
+        auto track = m_tracks.get(track_number);
+        if (!track.has_value())
+            return {};
+        return *track.value();
+    }
+    void add_track(u64 track_number, NonnullOwnPtr<TrackEntry> track) { m_tracks.set(track_number, move(track)); }
     NonnullOwnPtrVector<Cluster>& clusters() { return m_clusters; }
 
 private:
     EBMLHeader m_header;
     OwnPtr<SegmentInformation> m_segment_information;
-    NonnullOwnPtrVector<TrackEntry> m_tracks;
+    HashMap<u64, NonnullOwnPtr<TrackEntry>> m_tracks;
     NonnullOwnPtrVector<Cluster> m_clusters;
 };
 

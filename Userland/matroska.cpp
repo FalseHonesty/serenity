@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018-2020, Andreas Kling <kling@serenityos.org>
+ * Copyright (c) 2020, Hunter Salyer <thefalsehonesty@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,7 +40,8 @@ int main(int, char**)
             printf("Writing app is \"%s\"\n", segment_information.value().writing_app().as_string().to_string().characters());
         }
         printf("Document has %zu tracks\n", document->tracks().size());
-        for (const auto& track : document->tracks()) {
+        for (const auto& track_entry : document->tracks()) {
+            const auto& track = *track_entry.value;
             printf("\tTrack #%llu with TrackID %llu\n", track.track_number(), track.track_uid());
             printf("\tTrack has TrackType %d\n", track.track_type());
             printf("\tTrack has Language \"%s\"\n", track.language().characters());
