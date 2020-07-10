@@ -167,12 +167,20 @@ public:
     Optional<SegmentInformation> segment_information() const { return static_cast<const SegmentInformation&>(*m_segment_information); }
     void set_segment_information(OwnPtr<SegmentInformation> segment_information) { m_segment_information = move(segment_information); }
     const HashMap<u64, NonnullOwnPtr<TrackEntry>>& tracks() const { return m_tracks; }
-    Optional<TrackEntry> track(u64 track_number) const
+    Optional<TrackEntry> track_for_track_number(u64 track_number) const
     {
         auto track = m_tracks.get(track_number);
         if (!track.has_value())
             return {};
         return *track.value();
+    }
+    Optional<TrackEntry> track_for_track_type(TrackEntry::TrackType type) const
+    {
+        for (auto& track_entry : m_tracks) {
+            if (track_entry.value->track_type() == type)
+                return *track_entry.value;
+        }
+        return {};
     }
     void add_track(u64 track_number, NonnullOwnPtr<TrackEntry> track) { m_tracks.set(track_number, move(track)); }
     NonnullOwnPtrVector<Cluster>& clusters() { return m_clusters; }
