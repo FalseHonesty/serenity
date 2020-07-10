@@ -38,7 +38,7 @@
 
 int main(int argc, char** argv)
 {
-    GUI::Application app(argc, argv);
+    auto app = GUI::Application::construct(argc, argv);
     auto window = GUI::Window::construct();
 
     auto document = Video::MatroskaReader::parse_matroska_from_file("/home/anon/test-webm.webm");
@@ -89,5 +89,5 @@ int main(int argc, char** argv)
     }
 
     window->show();
-    return app.exec();
+    return app->exec();
 }
