@@ -70,27 +70,27 @@ public:
     const kf_y_mode_probs_t& kf_y_mode_probs() const;
     const kf_uv_mode_prob_t& kf_uv_mode_prob() const;
 
-    const partition_probs_t& partition_probs() const { return m_current_probability_table.partition_probs; };
-    const y_mode_probs_t& y_mode_probs() const { return m_current_probability_table.y_mode_probs; };
-    const uv_mode_probs_t& uv_mode_probs() const { return m_current_probability_table.uv_mode_probs; };
-    const skip_prob_t& skip_prob() const { return m_current_probability_table.skip_prob; };
-    const is_inter_prob_t& is_inter_prob() const { return m_current_probability_table.is_inter_prob; };
-    const comp_mode_prob_t& comp_mode_prob() const { return m_current_probability_table.comp_mode_prob; };
-    const comp_ref_prob_t& comp_ref_prob() const { return m_current_probability_table.comp_ref_prob; };
-    const single_ref_prob_t& single_ref_prob() const { return m_current_probability_table.single_ref_prob; };
-    const mv_sign_prob_t& mv_sign_prob() const { return m_current_probability_table.mv_sign_prob; };
-    const mv_bits_prob_t& mv_bits_prob() const { return m_current_probability_table.mv_bits_prob; };
-    const mv_class0_bit_prob_t& mv_class0_bit_prob() const { return m_current_probability_table.mv_class0_bit_prob; };
-    const tx_probs_t& tx_probs() const { return m_current_probability_table.tx_probs; };
-    const inter_mode_probs_t& inter_mode_probs() const { return m_current_probability_table.inter_mode_probs; };
-    const interp_filter_probs_t& interp_filter_probs() const { return m_current_probability_table.interp_filter_probs; };
-    const mv_joint_probs_t& mv_joint_probs() const { return m_current_probability_table.mv_joint_probs; };
-    const mv_class_probs_t& mv_class_probs() const { return m_current_probability_table.mv_class_probs; };
-    const mv_class0_fr_probs_t& mv_class0_fr_probs() const { return m_current_probability_table.mv_class0_fr_probs; };
-    const mv_class0_hp_prob_t& mv_class0_hp_prob() const { return m_current_probability_table.mv_class0_hp_prob; };
-    const mv_fr_probs_t& mv_fr_probs() const { return m_current_probability_table.mv_fr_probs; };
-    const mv_hp_prob_t& mv_hp_prob() const { return m_current_probability_table.mv_hp_prob; };
-    const coef_probs_t& coef_probs() const { return m_current_probability_table.coef_probs; };
+    partition_probs_t& partition_probs() { return m_current_probability_table.partition_probs; };
+    y_mode_probs_t& y_mode_probs() { return m_current_probability_table.y_mode_probs; };
+    uv_mode_probs_t& uv_mode_probs() { return m_current_probability_table.uv_mode_probs; };
+    skip_prob_t& skip_prob() { return m_current_probability_table.skip_prob; };
+    is_inter_prob_t& is_inter_prob() { return m_current_probability_table.is_inter_prob; };
+    comp_mode_prob_t& comp_mode_prob() { return m_current_probability_table.comp_mode_prob; };
+    comp_ref_prob_t& comp_ref_prob() { return m_current_probability_table.comp_ref_prob; };
+    single_ref_prob_t& single_ref_prob() { return m_current_probability_table.single_ref_prob; };
+    mv_sign_prob_t& mv_sign_prob() { return m_current_probability_table.mv_sign_prob; };
+    mv_bits_prob_t& mv_bits_prob() { return m_current_probability_table.mv_bits_prob; };
+    mv_class0_bit_prob_t& mv_class0_bit_prob() { return m_current_probability_table.mv_class0_bit_prob; };
+    tx_probs_t& tx_probs() { return m_current_probability_table.tx_probs; };
+    inter_mode_probs_t& inter_mode_probs() { return m_current_probability_table.inter_mode_probs; };
+    interp_filter_probs_t& interp_filter_probs() { return m_current_probability_table.interp_filter_probs; };
+    mv_joint_probs_t& mv_joint_probs() { return m_current_probability_table.mv_joint_probs; };
+    mv_class_probs_t& mv_class_probs() { return m_current_probability_table.mv_class_probs; };
+    mv_class0_fr_probs_t& mv_class0_fr_probs() { return m_current_probability_table.mv_class0_fr_probs; };
+    mv_class0_hp_prob_t& mv_class0_hp_prob() { return m_current_probability_table.mv_class0_hp_prob; };
+    mv_fr_probs_t& mv_fr_probs() { return m_current_probability_table.mv_fr_probs; };
+    mv_hp_prob_t& mv_hp_prob() { return m_current_probability_table.mv_hp_prob; };
+    coef_probs_t& coef_probs() { return m_current_probability_table.coef_probs; };
 
 private:
     struct ProbabilityTable {

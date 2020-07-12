@@ -37,6 +37,7 @@ namespace Video {
 
 class VP9Decoder {
 public:
+    VP9Decoder();
     bool parse_frame(const ByteBuffer&);
     void dump_info();
 
@@ -116,7 +117,7 @@ private:
             m_bool_value = read_f8();
             m_bool_range = 255;
             m_bool_max_bits = (8 * bytes) - 8;
-            return !read_bool(0);
+            return !read_bool(128);
         }
 
         bool read_bool(u8 probability)
@@ -155,6 +156,17 @@ private:
             return padding_element == 0;
         }
 
+        u8 read_literal(size_t n)
+        {
+            u8 return_value = 0;
+            for (size_t i = 0; i < n; i++) {
+                return_value = (2 * return_value) + read_bool(128);
+            }
+            return return_value;
+        }
+
+        size_t bytes_remaining() { return m_bytes_remaining; }
+
     private:
         const u8* m_data_ptr { nullptr };
         size_t m_bytes_remaining { 0 };
@@ -188,7 +200,7 @@ private:
         FULL_SWING
     };
 
-    enum InterpolationFilter : u8 {
+    enum InterpolationFilter {
         EIGHTTAP = 0,
         EIGHTTAP_SMOOTH = 1,
         EIGHTTAP_SHARP = 2,
@@ -204,7 +216,29 @@ private:
         MAX_REF_FRAMES = 4
     };
 
-    static constexpr VP9Decoder::InterpolationFilter literal_to_type[4] = { EIGHTTAP_SMOOTH, EIGHTTAP, EIGHTTAP_SHARP, BILINEAR };
+    enum TXMode {
+        Only4x4 = 0,
+        Allow8x8 = 1,
+        Allow16x16 = 2,
+        Allow32x32 = 3,
+        TXModeSelect = 4,
+    };
+
+    enum TXSize {
+        TX4x4 = 0,
+        TX8x8 = 1,
+        TX16x16 = 2,
+        TX32x32 = 3,
+    };
+
+    enum ReferenceMode {
+        SingleReference = 0,
+        CompoundReference = 1,
+        ReferenceModeSelect = 2,
+    };
+
+    static constexpr InterpolationFilter literal_to_type[4] = { EIGHTTAP_SMOOTH, EIGHTTAP, EIGHTTAP_SHARP, BILINEAR };
+    static constexpr TXSize tx_mode_to_biggest_tx_size[TX_MODES] = { TX4x4, TX8x8, TX16x16, TX32x32, TX32x32 };
 
     FrameType read_frame_type()
     {
@@ -238,6 +272,26 @@ private:
     u16 calc_max_log2_tile_cols();
     bool setup_past_independence();
     bool trailing_bits();
+
+    bool compressed_header();
+    bool read_tx_mode();
+    bool tx_mode_probs();
+    u8 diff_update_prob(u8 prob);
+    u8 decode_term_subexp();
+    u8 inv_remap_prob(u8 delta_prob, u8 prob);
+    u8 inv_recenter_nonneg(u8 v, u8 m);
+    bool read_coef_probs();
+    bool read_skip_prob();
+    bool read_inter_mode_probs();
+    bool read_interp_filter_probs();
+    bool read_is_inter_probs();
+    bool frame_reference_mode();
+    bool frame_reference_mode_probs();
+    bool read_y_mode_probs();
+    bool read_partition_probs();
+    bool mv_probs();
+    u8 update_mv_prob(u8 prob);
+    bool setup_compound_reference_mode();
 
     u64 m_start_bit_pos { 0 };
     u8 m_profile { 0 };
@@ -284,6 +338,11 @@ private:
     u16 m_tile_rows_log2 { 0 };
     i8 m_loop_filter_ref_deltas[MAX_REF_FRAMES];
     i8 m_loop_filter_mode_deltas[2];
+
+    TXMode m_tx_mode;
+    ReferenceMode m_reference_mode;
+    ReferenceFrame m_comp_fixed_ref;
+    ReferenceFrame m_comp_var_ref[2];
 
     OwnPtr<BitStream> m_bit_stream;
     OwnPtr<ProbabilityTables> m_probability_tables;

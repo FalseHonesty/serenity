@@ -56,5 +56,8 @@ namespace Video {
 #define SEG_LVL_MAX 4
 #define MV_JOINTS 4
 #define MV_FR_SIZE 4
+#define MAX_PROB 255
+#define TX_MODES 5
+#define REFS_PER_FRAME 3
 
 }
