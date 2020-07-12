@@ -27,6 +27,7 @@
 #pragma once
 
 #include "ProbabilityTables.h"
+#include "SyntaxElementCounter.h"
 #include <AK/ByteBuffer.h>
 #include <AK/Optional.h>
 #include <AK/OwnPtr.h>
@@ -108,12 +109,62 @@ private:
             return (m_bytes_read * 8) + (7 - m_current_bit_position);
         }
 
+        bool init_bool(size_t bytes)
+        {
+            if (bytes < 1)
+                return false;
+            m_bool_value = read_f8();
+            m_bool_range = 255;
+            m_bool_max_bits = (8 * bytes) - 8;
+            return !read_bool(0);
+        }
+
+        bool read_bool(u8 probability)
+        {
+            auto split = 1u + (((m_bool_range - 1u) * probability) >> 8u);
+            bool return_bool;
+
+            if (m_bool_value < split) {
+                m_bool_range = split;
+                return_bool = false;
+            } else {
+                m_bool_value -= split;
+                return_bool = true;
+            }
+
+            while (m_bool_range < 128) {
+                bool new_bit;
+                if (m_bool_max_bits) {
+                    new_bit = read_bit();
+                    m_bool_max_bits--;
+                } else {
+                    new_bit = false;
+                }
+                m_bool_range *= 2;
+                m_bool_value = (m_bool_value << 1u) + new_bit;
+            }
+
+            return return_bool;
+        }
+
+        bool exit_bool()
+        {
+            auto padding_element = read_f(m_bool_max_bits);
+            // TODO: It is a requirement of bitstream conformance that enough padding bits are inserted to ensure that the final coded byte of a frame is not equal to a superframe marker.
+            //  A byte b is equal to a superframe marker if and only if (b & 0xe0)is equal to 0xc0, i.e. if the most significant 3 bits are equal to 0b110.
+            return padding_element == 0;
+        }
+
     private:
         const u8* m_data_ptr { nullptr };
         size_t m_bytes_remaining { 0 };
         Optional<u8> m_current_byte;
         i8 m_current_bit_position { 0 };
         u64 m_bytes_read { 0 };
+
+        u8 m_bool_value { 0 };
+        u8 m_bool_range { 0 };
+        u64 m_bool_max_bits { 0 };
     };
 
     enum FrameType {
@@ -236,6 +287,7 @@ private:
 
     OwnPtr<BitStream> m_bit_stream;
     OwnPtr<ProbabilityTables> m_probability_tables;
+    OwnPtr<SyntaxElementCounter> m_syntax_element_counter;
 };
 
 }

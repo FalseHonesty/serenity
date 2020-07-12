@@ -4,6 +4,7 @@ set(SOURCES
     VideoPlayerWidget.cpp
     VPX/Constants.h
     VPX/ProbabilityTables.cpp
+    VPX/SyntaxElementCounter.cpp
     VPX/VP9Decoder.cpp
 )
 

@@ -54,5 +54,7 @@ namespace Video {
 #define MAX_TILE_WIDTH_B64 64
 #define MAX_SEGMENTS 8
 #define SEG_LVL_MAX 4
+#define MV_JOINTS 4
+#define MV_FR_SIZE 4
 
 }

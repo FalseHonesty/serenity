@@ -35,6 +35,7 @@ bool VP9Decoder::parse_frame(const ByteBuffer& frame_data)
 {
     m_bit_stream = make<BitStream>(frame_data.data(), frame_data.size());
     m_probability_tables = make<ProbabilityTables>();
+    m_probability_tables = make<SyntaxElementCounter>();
 
     m_start_bit_pos = m_bit_stream->get_position();
     if (!uncompressed_header())
@@ -49,6 +50,10 @@ bool VP9Decoder::parse_frame(const ByteBuffer& frame_data)
     }
     m_probability_tables->load_probs(m_frame_context_idx);
     m_probability_tables->load_probs2(m_frame_context_idx);
+    m_syntax_element_counter->clear_counts();
+    m_bit_stream->init_bool(m_header_size_in_bytes);
+    // TODO: compressed_header();
+    m_bit_stream->exit_bool();
     return true;
 }
 
