@@ -29,19 +29,26 @@
 namespace Video {
 
 #define RESERVED_ZERO                  \
-    if (m_bit_stream->read_bit() != 0) \
-    return false
-
-#define MIN_TILE_WIDTH_B64 4
-#define MAX_TILE_WIDTH_B64 64
-#define MAX_SEGMENTS 8
-#define SEG_LVL_MAX 4
+    if (m_bit_stream->read_bit() != 0) return false
 
 bool VP9Decoder::parse_frame(const ByteBuffer& frame_data)
 {
     m_bit_stream = make<BitStream>(frame_data.data(), frame_data.size());
+    m_probability_tables = make<ProbabilityTables>();
+
     m_start_bit_pos = m_bit_stream->get_position();
-    uncompressed_header();
+    if (!uncompressed_header())
+        return false;
+    if (!trailing_bits())
+        return false;
+    if (m_header_size_in_bytes == 0) {
+        // TODO: Do we really need to read all of these bits?
+        // while (m_bit_stream->get_position() < m_start_bit_pos + (8 * frame_data.size()))
+        //     RESERVED_ZERO;
+        return true;
+    }
+    m_probability_tables->load_probs(m_frame_context_idx);
+    m_probability_tables->load_probs2(m_frame_context_idx);
     return true;
 }
 
@@ -127,17 +134,17 @@ bool VP9Decoder::uncompressed_header()
         m_frame_parallel_decoding_mode = true;
     }
 
-    m_frame_context_index = m_bit_stream->read_f(2);
+    m_frame_context_idx = m_bit_stream->read_f(2);
     if (m_frame_is_intra || m_error_resilient_mode) {
         setup_past_independence();
         if (m_frame_type == KEY_FRAME || m_error_resilient_mode || m_reset_frame_context == 3) {
             for (auto i = 0; i < 4; i++) {
-                // TODO: save_probs(i);
+                m_probability_tables->save_probs(i);
             }
         } else if (m_reset_frame_context == 2) {
-            // TODO: save_probs(frame_context_idx);
+            m_probability_tables->save_probs(m_frame_context_idx);
         }
-        m_frame_context_index = 0;
+        m_frame_context_idx = 0;
     }
 
     loop_filter_params();
@@ -399,7 +406,14 @@ bool VP9Decoder::setup_past_independence()
     for (auto i = 0; i < 2; i++) {
         m_loop_filter_mode_deltas[i] = 0;
     }
-    // TODO: reset probability table
+    m_probability_tables->reset_probs();
+    return true;
+}
+
+bool VP9Decoder::trailing_bits()
+{
+    while (m_bit_stream->get_position() & 7u)
+        RESERVED_ZERO;
     return true;
 }
 

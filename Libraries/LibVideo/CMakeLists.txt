@@ -2,7 +2,9 @@ set(SOURCES
     MatroskaDocument.h
     MatroskaReader.cpp
     VideoPlayerWidget.cpp
-    VP9Decoder.cpp
+    VPX/Constants.h
+    VPX/ProbabilityTables.cpp
+    VPX/VP9Decoder.cpp
 )
 
 serenity_lib(LibVideo video)

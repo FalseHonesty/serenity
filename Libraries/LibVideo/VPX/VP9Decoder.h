@@ -26,6 +26,7 @@
 
 #pragma once
 
+#include "ProbabilityTables.h"
 #include <AK/ByteBuffer.h>
 #include <AK/Optional.h>
 #include <AK/OwnPtr.h>
@@ -185,6 +186,7 @@ private:
     u16 calc_min_log2_tile_cols();
     u16 calc_max_log2_tile_cols();
     bool setup_past_independence();
+    bool trailing_bits();
 
     u64 m_start_bit_pos { 0 };
     u8 m_profile { 0 };
@@ -205,7 +207,7 @@ private:
     u8 m_ref_frame_sign_bias[LAST_FRAME + 3];
     bool m_refresh_frame_context { false };
     bool m_frame_parallel_decoding_mode { false };
-    u8 m_frame_context_index { 0 };
+    u8 m_frame_context_idx { 0 };
     u8 m_bit_depth { 0 };
     ColorSpace m_color_space;
     ColorRange m_color_range;
@@ -233,6 +235,7 @@ private:
     i8 m_loop_filter_mode_deltas[2];
 
     OwnPtr<BitStream> m_bit_stream;
+    OwnPtr<ProbabilityTables> m_probability_tables;
 };
 
 }

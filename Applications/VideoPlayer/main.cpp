@@ -34,7 +34,7 @@
 #include <LibGUI/Window.h>
 #include <LibGfx/Bitmap.h>
 #include <LibVideo/MatroskaReader.h>
-#include <LibVideo/VP9Decoder.h>
+#include <LibVideo/VPX/VP9Decoder.h>
 
 int main(int argc, char** argv)
 {
