@@ -1197,27 +1197,27 @@ void ProbabilityTables::save_probs(size_t index)
 
 void ProbabilityTables::reset_probs()
 {
-    __builtin_memcpy(m_current_probability_table.partition_probs, default_partition_probs, PARTITION_CONTEXTS);
-    __builtin_memcpy(m_current_probability_table.y_mode_probs, default_y_mode_probs, BLOCK_SIZE_GROUPS);
-    __builtin_memcpy(m_current_probability_table.uv_mode_probs, default_uv_mode_probs, INTRA_MODES);
+    __builtin_memcpy(m_current_probability_table.partition_probs, default_partition_probs, PARTITION_CONTEXTS * (PARTITION_TYPES - 1));
+    __builtin_memcpy(m_current_probability_table.y_mode_probs, default_y_mode_probs, BLOCK_SIZE_GROUPS * (INTRA_MODES - 1));
+    __builtin_memcpy(m_current_probability_table.uv_mode_probs, default_uv_mode_probs, INTRA_MODES * (INTRA_MODES - 1));
     __builtin_memcpy(m_current_probability_table.skip_prob, default_skip_prob, SKIP_CONTEXTS);
     __builtin_memcpy(m_current_probability_table.is_inter_prob, default_is_inter_prob, IS_INTER_CONTEXTS);
     __builtin_memcpy(m_current_probability_table.comp_mode_prob, default_comp_mode_prob, COMP_MODE_CONTEXTS);
     __builtin_memcpy(m_current_probability_table.comp_ref_prob, default_comp_ref_prob, REF_CONTEXTS);
-    __builtin_memcpy(m_current_probability_table.single_ref_prob, default_single_ref_prob, REF_CONTEXTS);
+    __builtin_memcpy(m_current_probability_table.single_ref_prob, default_single_ref_prob, REF_CONTEXTS * 2);
     __builtin_memcpy(m_current_probability_table.mv_sign_prob, default_mv_sign_prob, 2);
-    __builtin_memcpy(m_current_probability_table.mv_bits_prob, default_mv_bits_prob, 2);
+    __builtin_memcpy(m_current_probability_table.mv_bits_prob, default_mv_bits_prob, 2 * MV_OFFSET_BITS);
     __builtin_memcpy(m_current_probability_table.mv_class0_bit_prob, default_mv_class0_bit_prob, 2);
-    __builtin_memcpy(m_current_probability_table.tx_probs, default_tx_probs, TX_SIZES);
-    __builtin_memcpy(m_current_probability_table.inter_mode_probs, default_inter_mode_probs, INTER_MODE_CONTEXTS);
-    __builtin_memcpy(m_current_probability_table.interp_filter_probs, default_interp_filter_probs, INTERP_FILTER_CONTEXTS);
+    __builtin_memcpy(m_current_probability_table.tx_probs, default_tx_probs, TX_SIZES * TX_SIZE_CONTEXTS * (TX_SIZES - 1));
+    __builtin_memcpy(m_current_probability_table.inter_mode_probs, default_inter_mode_probs, INTER_MODE_CONTEXTS * (INTER_MODES - 1));
+    __builtin_memcpy(m_current_probability_table.interp_filter_probs, default_interp_filter_probs, INTERP_FILTER_CONTEXTS * (SWITCHABLE_FILTERS - 1));
     __builtin_memcpy(m_current_probability_table.mv_joint_probs, default_mv_joint_probs, 3);
-    __builtin_memcpy(m_current_probability_table.mv_class_probs, default_mv_class_probs, 2);
-    __builtin_memcpy(m_current_probability_table.mv_class0_fr_probs, default_mv_class0_fr_probs, 2);
+    __builtin_memcpy(m_current_probability_table.mv_class_probs, default_mv_class_probs, 2 * (MV_CLASSES - 1));
+    __builtin_memcpy(m_current_probability_table.mv_class0_fr_probs, default_mv_class0_fr_probs, 2 * CLASS0_SIZE * 3);
     __builtin_memcpy(m_current_probability_table.mv_class0_hp_prob, default_mv_class0_hp_prob, 2);
-    __builtin_memcpy(m_current_probability_table.mv_fr_probs, default_mv_fr_probs, 2);
+    __builtin_memcpy(m_current_probability_table.mv_fr_probs, default_mv_fr_probs, 2 * 3);
     __builtin_memcpy(m_current_probability_table.mv_hp_prob, default_mv_hp_prob, 2);
-    __builtin_memcpy(m_current_probability_table.coef_probs, default_coef_probs, TX_SIZES);
+    __builtin_memcpy(m_current_probability_table.coef_probs, default_coef_probs, TX_SIZES * BLOCK_TYPES * REF_TYPES * COEF_BANDS * PREV_COEF_CONTEXTS * UNCONSTRAINED_NODES);
 }
 
 void ProbabilityTables::load_probs(size_t index)
@@ -1225,14 +1225,14 @@ void ProbabilityTables::load_probs(size_t index)
     auto old_table = m_current_probability_table;
     m_current_probability_table = m_saved_probability_tables.at(index);
     __builtin_memcpy(m_current_probability_table.skip_prob, old_table.skip_prob, SKIP_CONTEXTS);
-    __builtin_memcpy(m_current_probability_table.tx_probs, old_table.tx_probs, SKIP_CONTEXTS);
+    __builtin_memcpy(m_current_probability_table.tx_probs, old_table.tx_probs, TX_SIZES * TX_SIZE_CONTEXTS * (TX_SIZES - 1));
 }
 
 void ProbabilityTables::load_probs2(size_t index)
 {
     auto new_table = m_saved_probability_tables.at(index);
     __builtin_memcpy(m_current_probability_table.skip_prob, new_table.skip_prob, SKIP_CONTEXTS);
-    __builtin_memcpy(m_current_probability_table.tx_probs, new_table.tx_probs, SKIP_CONTEXTS);
+    __builtin_memcpy(m_current_probability_table.tx_probs, new_table.tx_probs, TX_SIZES * TX_SIZE_CONTEXTS * (TX_SIZES - 1));
 }
 
 }
