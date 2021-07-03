@@ -8,19 +8,10 @@
 
 namespace Video::VP9 {
 
-MV::MV(u32 row, u32 col)
+MV::MV(i32 row, i32 col)
     : m_row(row)
     , m_col(col)
 {
-}
-
-MV& MV::operator=(MV const& other)
-{
-    if (this == &other)
-        return *this;
-    m_row = other.row();
-    m_col = other.col();
-    return *this;
 }
 
 MV& MV::operator=(i32 value)

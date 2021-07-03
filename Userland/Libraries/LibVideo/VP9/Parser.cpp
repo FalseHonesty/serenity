@@ -1541,21 +1541,57 @@ void Parser::get_sub_block_mv(int candidate_r, int candidate_c, u8 ref_list, int
     m_candidate_mv[ref_list] = m_sub_mvs[(candidate_r * m_mi_cols * 2 * 4) + (candidate_c * 2 * 4) + (ref_list * 2) + index];
 }
 
-bool Parser::find_best_ref_mvs(int)
+bool Parser::find_best_ref_mvs(u8 ref_list)
 {
-    // TODO: Implement
+    for (size_t i = 0; i < MAX_MV_REF_CANDIDATES; i++) {
+        auto delta_row = m_ref_list_mv[i].row();
+        auto delta_col = m_ref_list_mv[i].col();
+        if (!m_allow_high_precision_mv || !use_mv_hp(m_ref_list_mv[i])) {
+            if (delta_row & 1)
+                delta_row += (delta_row > 0 ? -1 : 1);
+            if (delta_col & 1)
+                delta_col += (delta_col > 0 ? -1 : 1);
+        }
+        auto border = (BORDERINPIXELS - INTERP_EXTEND) << 3;
+        m_ref_list_mv[i].set_row(clamp_mv_row(delta_row, border));
+        m_ref_list_mv[i].set_col(clamp_mv_col(delta_col, border));
+    }
+    m_nearest_mv[ref_list] = m_ref_list_mv[0];
+    m_near_mv[ref_list] = m_ref_list_mv[1];
+    m_best_mv[ref_list] = m_ref_list_mv[0];
     return true;
 }
 
-bool Parser::append_sub8x8_mvs(u8, u8)
+bool Parser::use_mv_hp(const MV& delta_mv)
 {
-    // TODO: Implement
-    return true;
+    return ((abs(delta_mv.row()) >> 3) < COMPANDED_MVREF_THRESH && (abs(delta_mv.col()) >> 3) < COMPANDED_MVREF_THRESH);
 }
 
-bool Parser::use_mv_hp(const MV&)
+bool Parser::append_sub8x8_mvs(u8 block, u8 ref_list)
 {
-    // TODO: Implement
+    find_mv_refs(m_ref_frame[ref_list], block);
+    auto dst = 0;
+    MV sub_8x8_mvs[2];
+    if (block == 0) {
+        for (auto const& ref : m_ref_list_mv)
+            sub_8x8_mvs[dst++] = ref;
+    } else if (block <= 2) {
+        sub_8x8_mvs[dst++] = m_block_mvs[ref_list][0];
+    } else {
+        sub_8x8_mvs[dst++] = m_block_mvs[ref_list][2];
+        for (int idx = 1; idx >= 0 && dst < 2; idx--) {
+            if (m_block_mvs[ref_list][idx] != sub_8x8_mvs[0])
+                sub_8x8_mvs[dst++] = m_block_mvs[ref_list][idx];
+        }
+    }
+    for (size_t n = 0; n < 2 && dst < 2; n++) {
+        if (m_ref_list_mv[n] != sub_8x8_mvs[0])
+            sub_8x8_mvs[dst++] = m_ref_list_mv[n];
+    }
+    if (dst < 2)
+        sub_8x8_mvs[dst] = MV::Zero();
+    m_nearest_mv[ref_list] = sub_8x8_mvs[0];
+    m_near_mv[ref_list] = sub_8x8_mvs[1];
     return true;
 }
 

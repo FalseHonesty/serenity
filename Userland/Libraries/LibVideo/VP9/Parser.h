@@ -137,9 +137,9 @@ private:
     void scale_mv(u8 ref_list, ReferenceFrame ref_frame);
     void get_block_mv(int candidate_r, int candidate_c, u8 ref_list, bool use_prev);
     void get_sub_block_mv(int candidate_r, int candidate_c, u8 ref_list, int delta_col, int block);
-    bool find_best_ref_mvs(int ref_list);
-    bool append_sub8x8_mvs(u8 block, u8 ref_list);
+    bool find_best_ref_mvs(u8 ref_list);
     bool use_mv_hp(MV const& delta_mv);
+    bool append_sub8x8_mvs(u8 block, u8 ref_list);
 
     u8 m_profile { 0 };
     u8 m_frame_to_show_map_index { 0 };
