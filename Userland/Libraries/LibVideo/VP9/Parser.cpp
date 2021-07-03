@@ -1224,6 +1224,7 @@ i32 Parser::read_mv_component(u8)
     u32 mag;
     if (mv_class == MvClass0) {
         auto mv_class0_bit = m_tree_parser->parse_tree<u32>(SyntaxElementType::MVClass0Bit);
+
         auto mv_class0_fr = m_tree_parser->parse_tree<u32>(SyntaxElementType::MVClass0FR);
         auto mv_class0_hp = m_tree_parser->parse_tree<u32>(SyntaxElementType::MVClass0HP);
         mag = ((mv_class0_bit << 3) | (mv_class0_fr << 1) | mv_class0_hp) + 1;

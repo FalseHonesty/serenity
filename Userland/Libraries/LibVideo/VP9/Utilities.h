@@ -19,6 +19,7 @@ namespace Video::VP9 {
     } while (0)
 
 u8 clip_3(u8 x, u8 y, u8 z);
+i32 clip_3(i32 x, i32 y, i32 z);
 u8 round_2(u8 x, u8 n);
 
 }

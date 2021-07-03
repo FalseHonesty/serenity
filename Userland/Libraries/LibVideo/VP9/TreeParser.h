@@ -72,6 +72,12 @@ public:
         m_start_y = start_y;
     }
 
+    void set_component(u8 component) { m_component = component; }
+
+    void set_index(u8 index) { m_index = index; }
+
+    void set_mv_class0_bit(u32 mv_class0_bit) { m_mv_class0_bit = mv_class0_bit; }
+
 private:
     u8 calculate_partition_probability(u8 node);
     u8 calculate_default_intra_mode_probability(u8 node);
@@ -108,6 +114,9 @@ private:
     u32 m_plane { 0 };
     TXSize m_tx_size;
     u32 m_pos { 0 };
+    u8 m_component { 0 };
+    u8 m_index { 0 };
+    u32 m_mv_class0_bit { 0 };
 };
 
 }
