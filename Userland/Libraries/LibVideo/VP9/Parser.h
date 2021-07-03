@@ -127,6 +127,16 @@ private:
 
     /* (6.5) Motion Vector Prediction */
     bool find_mv_refs(ReferenceFrame, int block);
+    bool is_inside(int candidate_r, int candidate_c);
+    void clamp_mv_ref(u8 index);
+    i32 clamp_mv_row(u8 mvec, u8 border);
+    i32 clamp_mv_col(u8 mvec, u8 border);
+    void add_mv_ref_list(u8 ref_list);
+    void if_same_ref_frame_add_mv(int candidate_r, int candidate_c, ReferenceFrame ref_frame, bool use_prev);
+    void if_diff_ref_frame_add_mv(int candidate_r, int candidate_c, ReferenceFrame ref_frame, bool use_prev);
+    void scale_mv(u8 ref_list, ReferenceFrame ref_frame);
+    void get_block_mv(int candidate_r, int candidate_c, u8 ref_list, bool use_prev);
+    void get_sub_block_mv(int candidate_r, int candidate_c, u8 ref_list, int delta_col, int block);
     bool find_best_ref_mvs(int ref_list);
     bool append_sub8x8_mvs(u8 block, u8 ref_list);
     bool use_mv_hp(MV const& delta_mv);
@@ -236,6 +246,17 @@ private:
     ReferenceFrame m_comp_var_ref[2];
     MV m_block_mvs[2][4];
     u8* m_prev_segment_ids { nullptr };
+    MV m_ref_list_mv[2];
+    MV m_candidate_mv[2];
+    u8 m_ref_mv_count { 0 };
+    ReferenceFrame m_candidate_frame[2];
+
+    bool m_previously_computed_image_size { false };
+    u32 m_previous_frame_width { 0 };
+    u32 m_previous_frame_height { 0 };
+    bool m_use_prev_frame_mvs { false };
+    bool m_prev_show_frame { false };
+    u8 m_mode_context[4];
 
     u32 m_allocated_dimensions { 0 };
     bool* m_skips { nullptr };
@@ -248,6 +269,8 @@ private:
     MV* m_mvs { nullptr };
     MV* m_sub_mvs { nullptr };
     IntraMode* m_sub_modes { nullptr };
+    ReferenceFrame* m_prev_ref_frames { nullptr };
+    MV* m_prev_mvs { nullptr };
 
     OwnPtr<BitStream> m_bit_stream;
     OwnPtr<ProbabilityTables> m_probability_tables;

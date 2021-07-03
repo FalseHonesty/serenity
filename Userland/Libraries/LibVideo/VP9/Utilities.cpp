@@ -13,6 +13,11 @@ u8 clip_3(u8 x, u8 y, u8 z)
     return clamp(z, x, y);
 }
 
+i32 clip_3(i32 x, i32 y, i32 z)
+{
+    return clamp(z, x, y);
+}
+
 u8 round_2(u8 x, u8 n)
 {
     return (x + (1 << (n - 1))) >> n;

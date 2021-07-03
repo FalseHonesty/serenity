@@ -26,6 +26,8 @@ Parser::~Parser()
     cleanup_tile_allocations();
     if (m_prev_segment_ids)
         free(m_prev_segment_ids);
+    if (m_segment_ids)
+        free(m_segment_ids);
 }
 
 void Parser::cleanup_tile_allocations()
@@ -38,8 +40,6 @@ void Parser::cleanup_tile_allocations()
         free(m_mi_sizes);
     if (m_y_modes)
         free(m_y_modes);
-    if (m_segment_ids)
-        free(m_segment_ids);
     if (m_ref_frames)
         free(m_ref_frames);
     if (m_interp_filters)
@@ -50,6 +50,10 @@ void Parser::cleanup_tile_allocations()
         free(m_sub_mvs);
     if (m_sub_modes)
         free(m_sub_modes);
+    if (m_prev_ref_frames)
+        free(m_prev_ref_frames);
+    if (m_prev_mvs)
+        free(m_prev_mvs);
 }
 
 /* (6.1) */
@@ -294,6 +298,20 @@ bool Parser::compute_image_size()
     m_mi_rows = (m_frame_height + 7u) >> 3u;
     m_sb64_cols = (m_mi_cols + 7u) >> 3u;
     m_sb64_rows = (m_mi_rows + 7u) >> 3u;
+
+    if (!m_previously_computed_image_size || m_previous_frame_width != m_frame_width || m_previous_frame_height != m_frame_height) {
+        m_previously_computed_image_size = true;
+        m_previous_frame_width = m_frame_width;
+        m_previous_frame_height = m_frame_height;
+
+        if (m_segment_ids)
+            free(m_segment_ids);
+        m_segment_ids = static_cast<u8*>(malloc(sizeof(u8) * m_mi_cols * m_mi_rows));
+        m_use_prev_frame_mvs = false;
+    } else {
+        m_use_prev_frame_mvs = m_prev_show_frame && !m_error_resilient_mode && m_frame_is_intra;
+    }
+    m_prev_show_frame = m_show_frame;
     return true;
 }
 
@@ -749,12 +767,15 @@ void Parser::allocate_tile_data()
     m_tx_sizes = static_cast<TXSize*>(malloc(sizeof(TXSize) * dimensions));
     m_mi_sizes = static_cast<u32*>(malloc(sizeof(u32) * dimensions));
     m_y_modes = static_cast<u8*>(malloc(sizeof(u8) * dimensions));
-    m_segment_ids = static_cast<u8*>(malloc(sizeof(u8) * dimensions));
     m_ref_frames = static_cast<ReferenceFrame*>(malloc(sizeof(ReferenceFrame) * dimensions * 2));
     m_interp_filters = static_cast<InterpolationFilter*>(malloc(sizeof(InterpolationFilter) * dimensions));
     m_mvs = static_cast<MV*>(malloc(sizeof(MV) * dimensions * 2));
     m_sub_mvs = static_cast<MV*>(malloc(sizeof(MV) * dimensions * 2 * 4));
     m_sub_modes = static_cast<IntraMode*>(malloc(sizeof(IntraMode) * dimensions * 4));
+
+    m_prev_ref_frames = static_cast<ReferenceFrame*>(malloc(sizeof(ReferenceFrame) * dimensions * 2));
+    m_prev_mvs = static_cast<MV*>(malloc(sizeof(MV) * dimensions * 2));
+
     m_allocated_dimensions = dimensions;
 }
 
@@ -1186,7 +1207,7 @@ bool Parser::assign_mv(bool is_compound)
 bool Parser::read_mv(u8 ref)
 {
     m_use_hp = m_allow_high_precision_mv && use_mv_hp(m_best_mv[ref]);
-    MV diff_mv;
+    MV diff_mv = MV::Zero();
     auto mv_joint = m_tree_parser->parse_tree<MvJoint>(SyntaxElementType::MVJoint);
     if (mv_joint == MvJointHzvnz || mv_joint == MvJointHnzvnz)
         diff_mv.set_row(read_mv_component(0));
@@ -1378,10 +1399,146 @@ u32 Parser::read_coef(Token token)
     return coef;
 }
 
-bool Parser::find_mv_refs(ReferenceFrame, int)
+bool Parser::find_mv_refs(ReferenceFrame ref_frame, int block)
 {
-    // TODO: Implement
+    m_ref_mv_count = 0;
+    auto different_ref_found = false;
+    auto context_counter = 0;
+    m_ref_list_mv[0] = MV::Zero();
+    m_ref_list_mv[1] = MV::Zero();
+    auto mv_ref_search = mv_ref_blocks[m_mi_size];
+    auto row = (int)m_mi_row;
+    auto col = (int)m_mi_col;
+    for (size_t i = 0; i < 2; i++) {
+        auto candidate_r = row + mv_ref_search[i][0];
+        auto candidate_c = col + mv_ref_search[i][1];
+        if (is_inside(candidate_r, candidate_c)) {
+            different_ref_found = true;
+            context_counter += mode_to_counter[m_y_modes[candidate_r * m_mi_cols + candidate_c]];
+            for (size_t j = 0; j < 2; j++) {
+                if (m_ref_frames[candidate_r * m_mi_cols * 2 + candidate_c * 2 + j] == ref_frame) {
+                    get_sub_block_mv(candidate_r, candidate_c, j, mv_ref_search[i][1], block);
+                    add_mv_ref_list(j);
+                    break;
+                }
+            }
+        }
+    }
+    for (size_t i = 0; i < MVREF_NEIGHBOURS; i++) {
+        auto candidate_r = row + mv_ref_search[i][0];
+        auto candidate_c = col + mv_ref_search[i][1];
+        if (is_inside(candidate_r, candidate_c)) {
+            different_ref_found = true;
+            if_same_ref_frame_add_mv(candidate_r, candidate_c, ref_frame, false);
+        }
+    }
+    if (m_use_prev_frame_mvs)
+        if_same_ref_frame_add_mv(row, col, ref_frame, true);
+    if (different_ref_found) {
+        for (size_t i = 0; i < MVREF_NEIGHBOURS; i++) {
+            auto candidate_r = row + mv_ref_search[i][0];
+            auto candidate_c = col + mv_ref_search[i][1];
+            if (is_inside(candidate_r, candidate_c))
+                if_diff_ref_frame_add_mv(candidate_r, candidate_c, ref_frame, false);
+        }
+    }
+    if (m_use_prev_frame_mvs)
+        if_diff_ref_frame_add_mv(row, col, ref_frame, true);
+    m_mode_context[ref_frame] = counter_to_context[context_counter];
+    for (size_t i = 0; i < MAX_MV_REF_CANDIDATES; i++)
+        clamp_mv_ref(i);
     return true;
+}
+
+bool Parser::is_inside(int candidate_r, int candidate_c)
+{
+    return (candidate_r >= 0 && (u32)candidate_r < m_mi_rows) && (candidate_c >= (int)m_mi_col_start && candidate_c < (int)m_mi_col_end);
+}
+
+void Parser::clamp_mv_ref(u8 index)
+{
+    m_ref_list_mv[index].set_row(clamp_mv_row(m_ref_list_mv[index].row(), MV_BORDER));
+    m_ref_list_mv[index].set_col(clamp_mv_col(m_ref_list_mv[index].col(), MV_BORDER));
+}
+
+i32 Parser::clamp_mv_row(u8 mvec, u8 border)
+{
+    auto bh = num_8x8_blocks_high_lookup[m_mi_size];
+    auto mb_to_top_edge = -((m_mi_row * MI_SIZE) * 8);
+    auto mb_to_bottom_edge = ((m_mi_rows - bh - m_mi_row) * MI_SIZE) * 8;
+    return clip_3(mb_to_top_edge - border, mb_to_bottom_edge + border, mvec);
+}
+
+i32 Parser::clamp_mv_col(u8 mvec, u8 border)
+{
+    auto bw = num_8x8_blocks_wide_lookup[m_mi_size];
+    auto mh_to_left_edge = -((m_mi_col * MI_SIZE) * 8);
+    auto mh_to_right_edge = ((m_mi_cols - bw - m_mi_col) * MI_SIZE) * 8;
+    return clip_3(mh_to_left_edge - border, mh_to_right_edge + border, mvec);
+}
+
+void Parser::add_mv_ref_list(u8 ref_list)
+{
+    if (m_ref_mv_count >= 2)
+        return;
+    if (m_ref_mv_count > 0) {
+        if (m_candidate_mv[ref_list] == m_ref_list_mv[0])
+            return;
+    }
+    m_ref_list_mv[m_ref_mv_count] = m_candidate_mv[ref_list];
+    m_ref_mv_count++;
+}
+
+void Parser::if_same_ref_frame_add_mv(int candidate_r, int candidate_c, ReferenceFrame ref_frame, bool use_prev)
+{
+    for (size_t j = 0; j < 2; j++) {
+        get_block_mv(candidate_r, candidate_c, j, use_prev);
+        if (m_candidate_frame[j] == ref_frame) {
+            add_mv_ref_list(j);
+            return;
+        }
+    }
+}
+
+void Parser::if_diff_ref_frame_add_mv(int candidate_r, int candidate_c, ReferenceFrame ref_frame, bool use_prev)
+{
+    for (size_t j = 0; j < 2; j++)
+        get_block_mv(candidate_r, candidate_c, j, use_prev);
+    auto mvs_same = m_candidate_mv[0] == m_candidate_mv[1];
+    if (m_candidate_frame[0] > IntraFrame && m_candidate_frame[0] != ref_frame) {
+        scale_mv(0, ref_frame);
+        add_mv_ref_list(0);
+    }
+    if (m_candidate_frame[1] > IntraFrame && m_candidate_frame[1] != ref_frame && !mvs_same) {
+        scale_mv(1, ref_frame);
+        add_mv_ref_list(1);
+    }
+}
+
+void Parser::scale_mv(u8 ref_list, ReferenceFrame ref_frame)
+{
+    auto candidate_frame = m_candidate_frame[ref_list];
+    if (m_ref_frame_sign_bias[candidate_frame] != m_ref_frame_sign_bias[ref_frame]) {
+        m_candidate_mv[ref_list] *= -1;
+    }
+}
+
+void Parser::get_block_mv(int candidate_r, int candidate_c, u8 ref_list, bool use_prev)
+{
+    auto lookup_position = (candidate_r * m_mi_cols * 2) + (candidate_c * 2) + ref_list;
+    if (use_prev) {
+        m_candidate_mv[ref_list] = m_prev_mvs[lookup_position];
+        m_candidate_frame[ref_list] = m_prev_ref_frames[lookup_position];
+    } else {
+        m_candidate_mv[ref_list] = m_mvs[lookup_position];
+        m_candidate_frame[ref_list] = m_ref_frames[lookup_position];
+    }
+}
+
+void Parser::get_sub_block_mv(int candidate_r, int candidate_c, u8 ref_list, int delta_col, int block)
+{
+    auto index = (block >= 0) ? idx_n_column_to_subblock[block][delta_col == 0] : 3;
+    m_candidate_mv[ref_list] = m_sub_mvs[(candidate_r * m_mi_cols * 2 * 4) + (candidate_c * 2 * 4) + (ref_list * 2) + index];
 }
 
 bool Parser::find_best_ref_mvs(int)

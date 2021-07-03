@@ -178,7 +178,8 @@ bool Decoder::update_reference_frames()
         m_parser->m_ref_frame_height[i] = m_parser->m_frame_height;
         // TODO: 1.3-1.7
     }
-    // TODO: 2.1-2.2
+    __builtin_memcpy(m_parser->m_prev_ref_frames, m_parser->m_ref_frames, sizeof(ReferenceFrame) * m_parser->m_mi_cols * m_parser->m_mi_rows * 2);
+    __builtin_memcpy(m_parser->m_prev_mvs, m_parser->m_mvs, sizeof(MV) * m_parser->m_mi_cols * m_parser->m_mi_rows * 2);
     return true;
 }
 

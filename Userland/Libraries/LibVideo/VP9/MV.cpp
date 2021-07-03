@@ -35,4 +35,15 @@ MV MV::operator+(MV const& other) const
     return MV(this->row() + other.row(), this->col() + other.col());
 }
 
+void MV::operator*=(i32 value)
+{
+    m_row = m_row * value;
+    m_col = m_col * value;
+}
+
+bool MV::operator==(const MV& other) const
+{
+    return this->row() == other.row() && this->col() == other.col();
+}
+
 }

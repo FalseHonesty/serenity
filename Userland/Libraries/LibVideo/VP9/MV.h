@@ -15,6 +15,8 @@ public:
     MV() = default;
     MV(u32 row, u32 col);
 
+    static MV Zero() { return MV(0, 0); }
+
     u32 row() const { return m_row; }
     void set_row(u32 row) { m_row = row; }
     u32 col() const { return m_col; }
@@ -23,6 +25,8 @@ public:
     MV& operator=(MV const& other);
     MV& operator=(i32 value);
     MV operator+(MV const& other) const;
+    void operator*=(i32 value);
+    bool operator==(MV const& other) const;
 
 private:
     u32 m_row { 0 };
