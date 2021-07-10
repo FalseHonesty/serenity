@@ -70,7 +70,7 @@ private:
     u8 read_prob();
     bool tile_info();
     u16 calc_min_log2_tile_cols();
-    u16 calc_max_log2_tile_cols();
+    u8 calc_max_log2_tile_cols();
     bool setup_past_independence();
 
     /* (6.3) Compressed Header Syntax */
@@ -174,7 +174,7 @@ private:
     u32 m_mi_rows { 0 };
     u32 m_sb64_cols { 0 };
     u32 m_sb64_rows { 0 };
-    InterpolationFilter m_interpolation_filter;
+    InterpolationFilter m_interpolation_filter { 0 };
     bool m_lossless { false };
     u8 m_segmentation_tree_probs[7];
     u8 m_segmentation_pred_prob[3];

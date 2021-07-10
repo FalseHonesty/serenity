@@ -23,9 +23,7 @@ public:
     bool read_bit();
 
     /* (9.1) */
-    u8 read_f(size_t n);
-    u8 read_f8();
-    u16 read_f16();
+    u32 read_f(size_t n);
 
     /* (9.2) */
     bool init_bool(size_t bytes);

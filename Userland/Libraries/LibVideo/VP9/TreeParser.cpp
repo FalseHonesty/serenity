@@ -202,7 +202,7 @@ u8 TreeParser::calculate_partition_probability(u8 node)
     above = (above & (1 << block_offset)) > 0;
     left = (left & (1 << block_offset)) > 0;
     m_ctx = bsl * 4 + left * 2 + above;
-    if (m_decoder.m_frame_is_intra)
+    if (!m_decoder.m_frame_is_intra)
         return m_decoder.m_probability_tables->kf_partition_probs()[m_ctx][node2];
     return m_decoder.m_probability_tables->partition_probs()[m_ctx][node2];
 }

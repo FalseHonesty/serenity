@@ -160,11 +160,11 @@ bool Parser::uncompressed_header()
                 m_bit_depth = 8;
             }
 
-            m_refresh_frame_flags = m_bit_stream->read_f8();
+            m_refresh_frame_flags = m_bit_stream->read_f(8);
             SAFE_CALL(frame_size());
             SAFE_CALL(render_size());
         } else {
-            m_refresh_frame_flags = m_bit_stream->read_f8();
+            m_refresh_frame_flags = m_bit_stream->read_f(8);
             for (auto i = 0; i < 3; i++) {
                 m_ref_frame_idx[i] = m_bit_stream->read_f(3);
                 m_ref_frame_sign_bias[LastFrame + i] = m_bit_stream->read_bit();
@@ -201,7 +201,7 @@ bool Parser::uncompressed_header()
     SAFE_CALL(segmentation_params());
     SAFE_CALL(tile_info());
 
-    m_header_size_in_bytes = m_bit_stream->read_f16();
+    m_header_size_in_bytes = m_bit_stream->read_f(16);
 
     return true;
 }
@@ -251,8 +251,8 @@ bool Parser::color_config()
 
 bool Parser::frame_size()
 {
-    m_frame_width = m_bit_stream->read_f16() + 1;
-    m_frame_height = m_bit_stream->read_f16() + 1;
+    m_frame_width = m_bit_stream->read_f(16) + 1;
+    m_frame_height = m_bit_stream->read_f(16) + 1;
     SAFE_CALL(compute_image_size());
     return true;
 }
@@ -260,8 +260,8 @@ bool Parser::frame_size()
 bool Parser::render_size()
 {
     if (m_bit_stream->read_bit()) {
-        m_render_width = m_bit_stream->read_f16() + 1;
-        m_render_height = m_bit_stream->read_f16() + 1;
+        m_render_width = m_bit_stream->read_f(16) + 1;
+        m_render_height = m_bit_stream->read_f(16) + 1;
     } else {
         m_render_width = m_frame_width;
         m_render_height = m_frame_height;
@@ -382,7 +382,7 @@ bool Parser::segmentation_params()
     m_segmentation_abs_or_delta_update = m_bit_stream->read_bit();
     for (auto i = 0; i < MAX_SEGMENTS; i++) {
         for (auto j = 0; j < SEG_LVL_MAX; j++) {
-            auto feature_value = 0;
+            u8 feature_value = 0;
             auto feature_enabled = m_bit_stream->read_bit();
             m_feature_enabled[i][j] = feature_enabled;
             if (feature_enabled) {
@@ -426,15 +426,15 @@ bool Parser::tile_info()
 
 u16 Parser::calc_min_log2_tile_cols()
 {
-    auto min_log_2 = 0u;
+    u8 min_log_2 = 0;
     while ((u32)(MAX_TILE_WIDTH_B64 << min_log_2) < m_sb64_cols)
         min_log_2++;
     return min_log_2;
 }
 
-u16 Parser::calc_max_log2_tile_cols()
+u8 Parser::calc_max_log2_tile_cols()
 {
-    u16 max_log_2 = 1;
+    u8 max_log_2 = 1;
     while ((m_sb64_cols >> max_log_2) >= MIN_TILE_WIDTH_B64)
         max_log_2++;
     return max_log_2 - 1;
@@ -531,7 +531,7 @@ u8 Parser::decode_term_subexp()
     if (m_bit_stream->read_literal(1) == 0)
         return m_bit_stream->read_literal(4) + 16;
     if (m_bit_stream->read_literal(1) == 0)
-        return m_bit_stream->read_literal(4) + 32;
+        return m_bit_stream->read_literal(5) + 32;
 
     auto v = m_bit_stream->read_literal(7);
     if (v < 65)
@@ -854,7 +854,7 @@ bool Parser::clear_left_context()
 bool Parser::decode_partition(u32 row, u32 col, u8 block_subsize)
 {
     if (row >= m_mi_rows || col >= m_mi_cols)
-        return false;
+        return true;
     m_block_subsize = block_subsize;
     m_num_8x8 = num_8x8_blocks_wide_lookup[block_subsize];
     auto half_block_8x8 = m_num_8x8 >> 1;
@@ -957,8 +957,10 @@ bool Parser::intra_frame_mode_info()
                 for (auto y = 0; y < m_num_4x4_h; y++) {
                     for (auto x = 0; x < m_num_4x4_w; x++) {
                         auto index = (idy + y) * 2 + idx + x;
-                        if (index > 3)
+                        if (index > 3) {
                             dbgln("Trying to access index {} on m_sub_modes", index);
+                            VERIFY_NOT_REACHED();
+                        }
                         m_block_sub_modes[index] = m_default_intra_mode;
                     }
                 }
